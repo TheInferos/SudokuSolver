@@ -99,6 +99,33 @@ def nonetRemover(boxList, ident):
                 boxList[ref].possibleNumbers[(number - 1)] = 0
     return boxList
 
+def rowSolving(boxList, ident,change):
+    startPoint= ident *9
+    answerField = [ -1, -1, -1, -1, -1, -1, -1, -1, -1]
+    unsolved = []
+    changed = change
+    for i in range(9):
+        ref = startPoint + i
+        num = boxList[ref].actualNumber
+        if num != 0:
+            answerField[num-1] = ref
+        else:
+            unsolved.append(ref)
+    needSolving = []
+    for val in range(9):
+        if answerField[val] == -1:
+            needSolving.append(val+1)
+    for item in needSolving:
+        number = 0
+        poss = 0
+        for i in range(len(unsolved)):
+            if boxList[unsolved[i]].possibleNumbers[item-1] != 0:
+                number += 1
+                poss = unsolved[i]
+        if number == 1:
+            boxList[poss].setValue(item)
+            changed = True
+    return boxList, changed
 
 def main():
     boxList = setup()
@@ -106,7 +133,8 @@ def main():
     change = True
     while change:
         boxList,change= basicRemover(boxList)
-
+        if change == False:
+            for i in range(9):
+                boxList,change=rowSolving(boxList,i, change)
     print finalPuzzle(boxList)
-
 main()
