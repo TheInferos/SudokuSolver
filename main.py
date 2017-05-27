@@ -30,15 +30,13 @@ def setup():
     return boxs
 
 def parser(boxList):
-    f = open("hard.txt")
+    f = open("fiendish.txt")
     line = f.read().split()
     ident = 0
     for num in line:
-
         if num != "0":
             boxList[ident].setValue(int(num))
         ident += 1
-
     return boxList
 
 def finalPuzzle(boxList):
@@ -59,53 +57,25 @@ def basicRemover(boxList):
             boxList[i].checkIfSolved()
         if boxList[i].actualNumber != 0 and boxList[i].removed == False:
             if boxList[i].actualNumber != 0:
-                boxList = rowRemover(boxList, i)
-                boxList = columnRemover(boxList, i)
-                boxList= nonetRemover(boxList, i)
+                boxList = nakedRemoval(boxList, i, getRow(i))
+                boxList = nakedRemoval(boxList, i, getColumn(i))
+                boxList = nakedRemoval(boxList, i, getNonet(i))
                 boxList[i].removed = True
                 change = True
     return boxList, change
 
-def rowRemover(boxList, ident):
+def nakedRemoval(boxList, ident, refs):
     number = boxList[ident].actualNumber
-    start = (ident//9) *9
-    for i in range(9):
-        ref = start+ i
-        if i != ident and boxList[ref].solved == False:
+    for ref in refs:
+        if ref != ident and boxList[ref].solved == False:
             boxList[ref].possibleNumbers[(number-1)] = 0
     return boxList
 
-
-def columnRemover(boxList, ident):
-
-    number = boxList[ident].actualNumber
-    remainder = (ident % 9)
-    for i in range(9):
-        ref = i * 9 + remainder
-        if ref != ident:
-            boxList[ref].possibleNumbers[(number - 1)] = 0
-    return boxList
-
-
-def nonetRemover(boxList, ident):
-    number = boxList[ident].actualNumber
-    row = (ident//9) /3
-    collumn = (ident % 9) //3
-    pointer = (row * 3 * 9) + (collumn * 3)
-    for i in range(3):
-        for j in range(3):
-            ref = pointer + i * 9 + j
-            if ref != ident:
-                boxList[ref].possibleNumbers[(number - 1)] = 0
-    return boxList
-
-def rowSolving(boxList, ident,change):
-    startPoint= ident *9
+def hiddenRemoval(boxList, ident, change, element):
     answerField = [ -1, -1, -1, -1, -1, -1, -1, -1, -1]
     unsolved = []
     changed = change
-    for i in range(9):
-        ref = startPoint + i
+    for ref in element:
         num = boxList[ref].actualNumber
         if num != 0:
             answerField[num-1] = ref
@@ -127,6 +97,30 @@ def rowSolving(boxList, ident,change):
             changed = True
     return boxList, changed
 
+def getRow(ident):
+    refs = []
+    start = (ident // 9) * 9
+    for i in range(9):
+        refs.append(start+i)
+    return refs
+
+def getColumn(ident):
+    refs = []
+    remainder = (ident % 9)
+    for i in range(9):
+        refs.append( i * 9 + remainder)
+    return refs
+
+def getNonet(ident):
+    refs = []
+    row = (ident // 9) / 3
+    collumn = (ident % 9) // 3
+    pointer = (row * 3 * 9) + (collumn * 3)
+    for i in range(3):
+        for j in range(3):
+            refs.append(pointer + i * 9 + j)
+    return refs
+
 def main():
     boxList = setup()
     boxList = parser(boxList)
@@ -135,6 +129,13 @@ def main():
         boxList,change= basicRemover(boxList)
         if change == False:
             for i in range(9):
-                boxList,change=rowSolving(boxList,i, change)
+                boxList,change=hiddenRemoval(boxList,i, change, getRow(i*9))
+                boxList, change = hiddenRemoval(boxList, i, change, getColumn(i))
+        if change == False:
+            for i in range (3):
+                for j in range(3):
+                    boxList, change = hiddenRemoval(boxList, i, change, getNonet((i * 3)+j))
     print finalPuzzle(boxList)
+    for box in boxList:
+        print box.possibleNumbers
 main()
